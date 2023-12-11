@@ -1,0 +1,45 @@
+class MyClient(discord.Client):
+    async def on_ready(self):
+        print(f'Logged on as {self.user} {self.user.id}!')
+
+    async def on_message(self, message):
+        # ignore myself innit
+        if message.author.id == self.user.id:
+            return
+        # if I don't have permissions to read the message ignore it
+        if message.content.strip() == "" and len(message.attachments) == 0:
+            return
+
+        user = client.get_user(message.author.id)
+        if self.is_a_valid_user(message=message):
+            # send the message to the channel selected
+            await self.send_message(message="Anonymous report: "+message.content)
+            await self.handle_attachments(message=message)
+            await user.send("Your anonymous report has been filed, please wait for an mod to get in touch.")
+        else:
+            await user.send("You are not in a supported server, please reach out to a mod directly if you have left the server if you're able to.")
+
+    def is_a_valid_user(self, message):
+        # loop through members and find the matching one
+        # this is to basically stop non-server people from
+        # submitting reports.
+        for guild in client.guilds:
+            for member in guild.members:
+                if message.author.id == member.id:
+                    return True
+        return False
+
+    async def handle_attachments(self, message):
+        if len(message.attachments) > 0:
+            await self.send_message("Adding attachment links")
+        for attachment in message.attachments:
+            await self.send_message(attachment)
+
+    async def send_message(self, message):
+        channel = client.get_channel(CHANNEL_ID)
+        await channel.send(message)
+# we need to use the intent that lets the bot get members list
+intents = discord.Intents.default()
+intents.members = True
+client = MyClient(intents=intents)
+client.run(TOKEN)
